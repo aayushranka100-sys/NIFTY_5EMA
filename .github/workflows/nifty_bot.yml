@@ -1,0 +1,40 @@
+name: Nifty 5 EMA Alert Bot
+
+on:
+  schedule:
+    - cron: '*/5 3-10 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '11'
+
+      - name: Install dependencies
+        run: pip install requests pandas pytz
+
+      - name: Run Nifty Bot
+        env:
+          ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python bot.py
+
+      - name: Commit updated logs
+        run: |
+          git config --global user.name "NiftyBot"
+          git config --global user.email "bot@nifty.com"
+          git add signal_log.json last_signal.txt 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Bot: Update signal log [skip ci]"
+          git push
