@@ -2,38 +2,45 @@ name: Nifty 5 EMA Alert Bot
 
 on:
   schedule:
-    - cron: '*/5 3-10 * * 1-5'  # Indian market hours
-  workflow_dispatch:
+    # Indian Market Hours (IST): 9:15 AM to 3:30 PM
+    # UTC to IST = +5:30 → 3:45 UTC to 10:00 UTC
+    # Runs every 5 minutes, Monday to Friday (1-5)
+    - cron: '*/5 3-10 * * 1-5'
+  workflow_dispatch:  # Manual trigger bhi available
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'  # Latest stable version
+          python-version: '3.12'
 
-      - name: Install dependencies
+      - name: 📦 Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests pandas
+          pip install requests pandas pytz
 
-      - name: Run Bot
+      - name: 🤖 Run Nifty 5 EMA Bot
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python Bot.py
+        run: |
+          echo "🕐 Market check at $(TZ='Asia/Kolkata' date)"
+          python Bot.py
+          echo "✅ Bot execution completed"
 
-      - name: Commit signal log
+      - name: 💾 Commit & Push Signal Log (if updated)
         if: always()
         run: |
           git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add signal_log.json || true
-          git commit -m "Update signal log [skip ci]" || true
-          git push || true
+          git config --local user.name "Nifty Bot [GitHub Action]"
+          git add signal_log.json -f 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "📊 Auto-update signal log [$(TZ='Asia/Kolkata' date +'%d-%b %H:%M')]"
+          git push || echo "⚠️ Nothing to push"
