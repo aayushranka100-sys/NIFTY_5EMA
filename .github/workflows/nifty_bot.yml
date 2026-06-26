@@ -2,20 +2,20 @@ name: Nifty 5 EMA Alert Bot
 
 on:
   schedule:
-    - cron: '*/5 3-10 * * 1-5'  # Indian market hours (9:15 AM - 3:30 PM)
-  workflow_dispatch:           # Manual button ke liye
+    - cron: '*/5 3-10 * * 1-5'  # Indian market hours
+  workflow_dispatch:
 
 jobs:
-  run-bot:                     # Job name updated
+  run-bot:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4   # Updated to v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5 # Updated to v5
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'      # Fixed version for compatibility
+          python-version: '3.12'  # Latest stable version
 
       - name: Install dependencies
         run: |
@@ -30,9 +30,10 @@ jobs:
         run: python Bot.py
 
       - name: Commit signal log
+        if: always()
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add signal_log.json || echo "No log file to add"
-          git commit -m "Update signal log [skip ci]" || echo "No changes to commit"
-          git push || echo "Push failed"
+          git add signal_log.json || true
+          git commit -m "Update signal log [skip ci]" || true
+          git push || true
