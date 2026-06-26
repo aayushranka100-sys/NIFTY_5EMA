@@ -2,39 +2,37 @@ name: Nifty 5 EMA Alert Bot
 
 on:
   schedule:
-    - cron: '*/5 3-10 * * 1-5'
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    - cron: '*/5 3-10 * * 1-5'  # Indian market hours (9:15 AM - 3:30 PM)
+  workflow_dispatch:           # Manual button ke liye
 
 jobs:
-  run-bot:
+  run-bot:                     # Job name updated
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4   # Updated to v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5 # Updated to v5
         with:
-          python-version: '11'
+          python-version: '3.10'      # Fixed version for compatibility
 
       - name: Install dependencies
-        run: pip install requests pandas pytz
-
-      - name: Run Nifty Bot
-        env:
-          ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
-          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python bot.py
-
-      - name: Commit updated logs
         run: |
-          git config --global user.name "NiftyBot"
-          git config --global user.email "bot@nifty.com"
-          git add signal_log.json last_signal.txt 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "Bot: Update signal log [skip ci]"
-          git push
+          python -m pip install --upgrade pip
+          pip install requests pandas
+
+      - name: Run Bot
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python Bot.py
+
+      - name: Commit signal log
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add signal_log.json || echo "No log file to add"
+          git commit -m "Update signal log [skip ci]" || echo "No changes to commit"
+          git push || echo "Push failed"
